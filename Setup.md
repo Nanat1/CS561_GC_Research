@@ -1,6 +1,6 @@
 # Getting started
 
-## 1. Directory
+## 1. Project Structure
 
 ```bash
 project/
@@ -25,7 +25,7 @@ cd confznsplusplus
 ### 2.2 Compile QEMU (ConfZNS++)
 
 ```bash
-cd confznsplusplus
+# under confznsplusplus
 mkdir build-femu && cd build-femu
 
 # copy all the scripts from femu-scripts to build-femu
@@ -39,20 +39,25 @@ sudo ./pkgdep.sh
 ./femu-compile.sh
 ```
 
+If you come across some warnings while compiling, modify `femu-compile.sh`:
+```sh
+# disable warning error
+../configure --enable-kvm --target-list=x86_64-softmmu --disable-werror
+```
 Confirmation: 
 
 ```bash
 ls -lh x86_64-softmmu/qemu-system-x86_64
 ```
 
-### 2.3 Prepare VM image(qcow2)
+### 2.3 Prepare VM image
 
 A recommended way to get FEMU running quickly - Use Femu's VM image file. The iamge can be requested from this [form](https://docs.google.com/forms/d/e/1FAIpQLSdCyNTU7n-hwW1ODJ3i_q1vmS6eTT-V3c4vCL8ouYocNLhxvA/viewform). For my group members, I have already sent you email.
 
 ```bash
-mkdir -p ~/images
+mkdir ../../images
 
-cd ~/images
+cd ../../images
 
 wget http://people.cs.uchicago.edu/~huaicheng/femu/femu-vm.tar.xz
 
@@ -82,17 +87,14 @@ The user account and guest OS of the VM:
 ### 2.4 Run the device
 
 ```bash
+cd confznsplusplus/build-fem
 ./run-zns.sh
 ```
 
-To run the script properly, update the VM image path in run-zns.sh to point to your local qcow2 file.
+To run the script properly, update the VM image path in `run-zns.sh` to point to your local qcow2 file. For example, if you run this script under `build-femu`: 
 
 ```sh
-# Project root = parent dir of this script (femu-scripts/..)
-PROJROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-
-IMGDIR="$PROJROOT/images"
-OSIMGF="$IMGDIR/{your_vm}.qcow2"
+OSIMGF="../../images/u20s.qcow2"
 ```
 
 ## 3. Build Rocksdb with ZenFS
@@ -101,6 +103,10 @@ The following steps should be performed inside the guest VM after ConfZNS++ is l
 
 See the ZenFS [README.md](https://github.com/westerndigitalcorporation/zenfs/blob/master/README.md) for detailed instructions.
 
+First we login in the guest OS installed above:
+```
+ssh -p8080 $femu@localhost
+```
 ```bash
 # Download, build and install libzbd
 git clone https://github.com/westerndigitalcorporation/libzbd.git
