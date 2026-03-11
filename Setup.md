@@ -5,9 +5,10 @@
 ```bash
 project/
   confznsplusplus/          # ConfZNS++
-  rocksdb/                  # RocksDB (with ZenFS)
+    build-femu/
+  rocksdb/                  # RocksDB(with ZenFS)
   images/
-    ubuntu-22.04.qcow2      # VM images
+    u20s.qcow2      # VM images(requested from femu)
   results/
   README.md
 ```
@@ -25,14 +26,14 @@ cd confznsplusplus
 
 ```bash
 cd confznsplusplus
-mkdir build_femu && cd build_femu
+mkdir build-femu && cd build-femu
 
 # copy all the scripts from femu-scripts to build-femu
 cp ../femu-scripts/femu-copy-scripts.sh . 
 ./femu-copy-scripts.sh .
 
 # only Debian/Ubuntu based distributions supported (dependencies)
-./pkgdep.sh
+sudo ./pkgdep.sh
 
 # compile
 ./femu-compile.sh
@@ -44,20 +45,39 @@ Confirmation:
 ls -lh x86_64-softmmu/qemu-system-x86_64
 ```
 
-### 2.3 Prepare Ubuntu VM image(qcow2)
+### 2.3 Prepare VM image(qcow2)
+
+A recommended way to get FEMU running quickly - Use Femu's VM image file. The iamge can be requested from this [form](https://docs.google.com/forms/d/e/1FAIpQLSdCyNTU7n-hwW1ODJ3i_q1vmS6eTT-V3c4vCL8ouYocNLhxvA/viewform). For my group members, I have already sent you email.
 
 ```bash
-# under the confznsplusplus directory
-mkdir images 
-cd images
+mkdir -p ~/images
 
-wget https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img \
--O ubuntu-22.04.qcow2
+cd ~/images
 
-# create VM overlay(optional)
-apt install -y qemu-utils
-qemu-img create -f qcow2 -F qcow2 -b ubuntu-22.04.qcow2 vm.qcow2
+wget http://people.cs.uchicago.edu/~huaicheng/femu/femu-vm.tar.xz
+
+tar xJvf femu-vm.tar.xz
 ```
+
+After these steps, you will get two files: "u20s.qcow2" and "u20s.md5sum".
+
+You can verify the integrity of the VM image file by doing:
+
+```bash
+md5sum u20s.qcow2 > tmp.md5sum
+
+diff tmp.md5sum u20s.md5sum
+```
+
+If diff complains that the above two files differ, then the VM image file is corrupted. Please redo the above steps.
+
+The user account and guest OS of the VM:
+
+- username: femu
+
+- passwd : femu
+
+- Guest OS: Ubuntu 20.04.1 server, with kernel 5.4
 
 ### 2.4 Run the device
 
@@ -65,17 +85,19 @@ qemu-img create -f qcow2 -F qcow2 -b ubuntu-22.04.qcow2 vm.qcow2
 ./run-zns.sh
 ```
 
-To run the script properly, one must substitute the address of the virtual machine with their own:
+To run the script properly, update the VM image path in run-zns.sh to point to your local qcow2 file.
 
 ```sh
 # Project root = parent dir of this script (femu-scripts/..)
 PROJROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 IMGDIR="$PROJROOT/images"
-OSIMGF="$IMGDIR/vm.qcow2"
+OSIMGF="$IMGDIR/{your_vm}.qcow2"
 ```
 
 ## 3. Build Rocksdb with ZenFS
+
+The following steps should be performed inside the guest VM after ConfZNS++ is launched successfully.
 
 See the ZenFS [README.md](https://github.com/westerndigitalcorporation/zenfs/blob/master/README.md) for detailed instructions.
 
@@ -90,7 +112,7 @@ sudo make install
 sudo ldconfig
 
 # download rocksdb and zenfs
-git clone https://github.com/facebook/rocksdb.git
+git clone --branch v8.9.1 https://github.com/facebook/rocksdb.git
 cd rocksdb
 git clone https://github.com/westerndigitalcorporation/zenfs plugin/zenfs
 
@@ -100,7 +122,7 @@ DEBUG_LEVEL=0 ROCKSDB_PLUGINS=zenfs make -j"$(nproc)" db_bench
 
 # compile zenfs
 make
- 
+
 # verify
 cd ../../..
 ls db_bench
