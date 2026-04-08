@@ -52,7 +52,7 @@ ls -lh x86_64-softmmu/qemu-system-x86_64
 
 ### 2.3 Prepare VM image
 
-A recommended way to get FEMU running quickly - Use Femu's VM image file. The iamge can be requested from this [form](https://docs.google.com/forms/d/e/1FAIpQLSdCyNTU7n-hwW1ODJ3i_q1vmS6eTT-V3c4vCL8ouYocNLhxvA/viewform). For my group members, I have already sent you email.
+A recommended way to get FEMU running quickly - Use Femu's VM image file. The iamge can be requested from this [form](https://docs.google.com/forms/d/e/1FAIpQLSdCyNTU7n-hwW1ODJ3i_q1vmS6eTT-V3c4vCL8ouYocNLhxvA/viewform). For my group members, I have already sent you email.h/f.
 
 ```bash
 mkdir ../../images
@@ -87,7 +87,7 @@ The user account and guest OS of the VM:
 ### 2.4 Run the device
 
 ```bash
-cd confznsplusplus/build-fem
+cd confznsplusplus/build-femu
 ./run-zns.sh
 ```
 
@@ -124,9 +124,10 @@ git clone https://github.com/westerndigitalcorporation/zenfs plugin/zenfs
 
 # compile and install rocksdb with zenfs
 # if the terminal is killed, lower down the parallelism (-j2)
-DEBUG_LEVEL=0 ROCKSDB_PLUGINS=zenfs make -j"$(nproc)" db_bench
+DEBUG_LEVEL=0 ROCKSDB_PLUGINS=zenfs make -j2 db_bench install
 
 # compile zenfs
+cd plugin/zens/util/zenfs
 make
 
 # verify
@@ -134,4 +135,6 @@ cd ../../..
 ls db_bench
 ls plugin/zenfs/util/zenfs
 ```
+
+
 
