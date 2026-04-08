@@ -104,18 +104,20 @@ The ZNS device parameters are hardcoded in `confznsplusplus/hw/femu/zns/zns.c`. 
 
 ### 3.1 Key Parameters
 
-There are two locations in `zns.c` that control device behavior:
+There are **two files** that control ZNS device behavior:
 
-<!-- **Zone size** (top of file, macro definition):
+**Zone size** (inside `confznsplusplus/hw/femu/femu.c`, around line 749):
 ```c
-#define ZNS_ZONE_SIZE_BYTES (2 * GiB)  // default; modify for small/large zone experiments
-``` -->
+DEFINE_PROP_UINT64("zns_zonesize", FemuCtrl, zns_params.zone_size, (64 * MiB)),
+```
 
-**Active and open zone limits** (inside `zns_init_zone_cap()`, around line 1969):
+**Active and open zone limits** (inside `zns_init_zone_cap()` in `zns.c`, around line 1969):
 ```c
 n->max_active_zones = 0;   // 0 = unlimited (not realistic)
 n->max_open_zones   = 0;   // 0 = unlimited (not realistic)
 ```
+
+> **Note**: Do NOT modify `ZNS_ZONE_SIZE_BYTES` in `zns.c` — this macro is not used at runtime and changing it has no effect.
 
 ### 3.2 Parameter Relationships
 
@@ -133,57 +135,60 @@ n->num_zones = ns->size / lbasz / n->zone_size;
 
 > **Important**: Setting `max_active_zones = 0` causes the emulator to skip all active zone limit checks, which does not reflect real ZNS device behavior. Always set a non-zero value for experiments.
 
-<!-- ### 3.3 Experiment Configurations
+### 3.3 Experiment Configurations
 
-The project requires two types of ZNS configurations:
+| | Small-zone | Large-zone |
+|---|---|---|
+| `zone_size` (femu.c) | `64 * MiB` | `256 * MiB` |
+| `num_zones` (auto) | 64 | 16 |
+| `max_active_zones` (zns.c) | 16 | 8 |
+| `max_open_zones` (zns.c) | 8 | 4 |
 
-| Experiment | `ZNS_ZONE_SIZE_BYTES` | `max_active_zones` | `max_open_zones` | `num_zones` |
-|---|---|---|---|---|
-| Small-zone SSD |  | 16 | 8 | 64 |
-| Large-zone SSD |  | 6 | 4 | 8 |
-
-> **Note**: With `devsz_mb=4096` in `run-zns.sh`, using `512 * MiB` zones gives only 8 total zones, so `max_active_zones` must be ≤ 8. -->
+> **Note**: The values for `max_active_zones` and `max_open_zones` are tentative. Confirm final values with your mentor before running experiments. If RocksDB fails to start with an error related to open zones, increase `max_open_zones` accordingly.
 
 ### 3.4 How to Modify and Recompile
 
-1. Edit `confznsplusplus/hw/femu/zns/zns.c`:
+1. Edit zone size in `confznsplusplus/hw/femu/femu.c`:
 
-```bash
-# Step 1: change zone size (top of file)
-#define ZNS_ZONE_SIZE_BYTES (64 * MiB)
+```c
+DEFINE_PROP_UINT64("zns_zonesize", FemuCtrl, zns_params.zone_size, (64 * MiB)),
+```
 
-# Step 2: change active/open zone limits (inside zns_init_zone_cap)
+2. Edit active/open zone limits in `confznsplusplus/hw/femu/zns/zns.c` inside `zns_init_zone_cap()`:
+
+```c
 n->max_active_zones = 16;
 n->max_open_zones   = 8;
 ```
 
-2. Recompile:
+3. Recompile:
 
 ```bash
 cd confznsplusplus/build
 ./femu-compile.sh
 ```
 
-3. Restart the VM:
+4. Restart the VM:
 
 ```bash
 ./run-zns.sh
 ```
 
-4. Verify inside the VM:
+5. Verify inside the VM:
 
 ```bash
-# Check mar (max_active_zones - 1) and mor (max_open_zones - 1)
-sudo nvme zns id-ns /dev/nvme0n1
+# Check zone size, mar (max_active_zones) and mor (max_open_zones)
+sudo nvme zns id-ns /dev/nvme0n1 -H
 
-# Check total zone count and zone size
-sudo nvme zns report-zones /dev/nvme0n1 | head -5
+# Check total zone count
+sudo nvme zns report-zones /dev/nvme0n1 | head -3
 ```
 
-Expected output after setting `max_active_zones=16, max_open_zones=8`:
+Expected output after setting `zone_size=64MiB, max_active_zones=16, max_open_zones=8`:
 ```
-mar : 0xf
-mor : 0x7
+mar : 16    Active Resources
+mor : 8     Open Resources
+LBA Format Extension 0 : Zone Size: 0x20000 LBAs  (= 64MB)
 ```
 
 
