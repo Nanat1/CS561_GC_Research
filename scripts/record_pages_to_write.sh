@@ -1,0 +1,80 @@
+#!/bin/bash
+# Record pages_to_write on zone FINISH across finish thresholds
+# CS561 Spring 2026 - Ruoxi Cao
+# Run this on the HOST (SCC), not inside the VM.
+# Usage: bash record_pages_to_write.sh
+#
+# Requires: FEMU running with [FINISH] log instrumentation in zns.c
+# Results: results/pages_to_write.csv
+
+# ============================================================
+# Config
+# ============================================================
+SSH="ssh -p 8080 femu@localhost"
+FEMU_LOG="./log"                          # relative to confznsplusplus/build/
+RESULTS_DIR="../../results"
+CSV_FILE="$RESULTS_DIR/pages_to_write.csv"
+
+ZBD="nvme0n1"
+AUX_PATH="/tmp/zenfs-aux"
+NUM_OPS=1000000
+VALUE_SIZE=1024
+KEY_SIZE=16
+THRESHOLDS=(0 10 25 50 75 90)
+
+# ============================================================
+# Setup
+# ============================================================
+mkdir -p $RESULTS_DIR
+echo "finish_threshold,finish_call_count,avg_pages_to_write,timestamp" > $CSV_FILE
+
+echo "================================================"
+echo "  pages_to_write Recording Script"
+echo "  $(date)"
+echo "================================================"
+
+for thresh in "${THRESHOLDS[@]}"; do
+    echo ""
+    echo "--- Threshold: $thresh% ---"
+
+    # Clear previous FINISH log entries
+    echo "  Clearing FEMU log..."
+    > $FEMU_LOG
+
+    # Reset zones and format ZenFS inside VM
+    echo "  Resetting zones and formatting ZenFS..."
+    $SSH "sudo rm -rf $AUX_PATH"
+    $SSH "sudo nvme zns reset-zone -a /dev/$ZBD && \
+          cd ~/rocksdb && \
+          sudo ./plugin/zenfs/util/zenfs mkfs \
+            --zbd=$ZBD \
+            --aux_path=$AUX_PATH \
+            --finish_threshold=$thresh \
+            --force 2>/dev/null"
+
+    # Run fillrandom inside VM
+    echo "  Running fillrandom..."
+    $SSH "cd ~/rocksdb && sudo ./db_bench \
+        --fs_uri=zenfs://dev:$ZBD \
+        --benchmarks=fillrandom \
+        --num=$NUM_OPS \
+        --value_size=$VALUE_SIZE \
+        --key_size=$KEY_SIZE \
+        --compression_type=none 2>/dev/null"
+
+    # Parse pages_to_write from FEMU log
+    STATS=$(grep "\[FINISH\] pages_to_write:" $FEMU_LOG \
+        | awk -F': ' '{sum+=$2; count++} END {print count, sum/count}')
+
+    COUNT=$(echo $STATS | awk '{print $1}')
+    AVG=$(echo $STATS | awk '{print $2}')
+    TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+
+    echo "  finish_calls: $COUNT, avg pages_to_write: $AVG"
+    echo "$thresh,$COUNT,$AVG,$TIMESTAMP" >> $CSV_FILE
+done
+
+echo ""
+echo "================================================"
+echo "  Done. Results saved to: $CSV_FILE"
+echo "================================================"
