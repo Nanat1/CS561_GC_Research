@@ -169,11 +169,11 @@ cp ../../scripts/run-znsplusplus.sh .
 ./run-znsplusplus.sh
 ```
 
-Inside the VM:
+Inside the VM — verify zone size, mar, and mor:
 
 ```bash
-sudo nvme zns id-ns /dev/nvme0n1 -H       # check zone size, mar, mor
-sudo nvme zns report-zones /dev/nvme0n1| head -3  # check total zone count
+sudo nvme zns id-ns /dev/nvme0n1 -H        # check zone size, mar, mor
+sudo nvme zns report-zones /dev/nvme0n1 | head -3  # check total zone count
 ```
 
 Expected output:
@@ -182,6 +182,30 @@ Expected output:
 mar : 32    Active Resources
 mor : 16    Open Resources
 LBA Format Extension 0 : Zone Size: 0x80000 LBAs  (= 256 MiB)
+```
+
+On the host — verify internal geometry (channels, ways, dies, planes, etc.):
+
+```bash
+grep -A 10 "======" confznsplusplus/build/log
+```
+
+FEMU prints a geometry table on startup:
+
+```
+[FEMU] Log: ===========================================
+[FEMU] Log: |        ConfZNS HW Configuration()       |
+[FEMU] Log: ===========================================
+[FEMU] Log: | proglat     : 500000   | readlat   : 50000   |
+[FEMU] Log: | eraslat     : 5000000   | xferlat   : 25000   |
+[FEMU] Log: ===========================================
+[FEMU] Log: | nchnl       : 8   | nway      : 2   |
+[FEMU] Log: | nchnl/zone  : 8   | nway/zone : 2   |
+[FEMU] Log: | die/chip    : 1   | io_qs     : 16    |
+[FEMU] Log: | plane/die   : 1   | block/die : 2  |
+[FEMU] Log: | pages/block : 2048   |  stripe   : 32768   |
+[FEMU] Log: | page        : 4KiB|  zones    : 64  |
+[FEMU] Log: ===========================================
 ```
 
 ## 5. Running Experiments
