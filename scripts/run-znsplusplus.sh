@@ -47,6 +47,8 @@ port_image=22     # < Set to the exposed port on the image
 memory=4G         # RAM
 
 
+femu_device="femu,devsz_mb=${devsz_mb},femu_mode=3,zns_channels=${zns_channels},zns_ways=${zns_ways},zns_dies_per_chip=${zns_dies_per_chip},zns_planes_per_die=${zns_planes_per_die},zns_block_size_pages=${zns_block_size_pages},zns_ways_per_zone=${zns_ways_per_zone},zns_channels_per_zone=${zns_channels_per_zone},zns_page_write_latency=${zns_page_write_latency},zns_page_read_latency=${zns_page_read_latency},zns_channel_transfer_latency=${zns_channel_transfer_latency},zns_block_erasure_latency=${zns_block_erasure_latency},zns_zonesize=${zns_zonesize},zns_zonecap=${zns_zonecap}"
+
 sudo $qemu \
     -name "FEMU-ZNSSD-VM" \
     -enable-kvm \
@@ -56,20 +58,7 @@ sudo $qemu \
     -device virtio-scsi-pci,id=scsi0 \
     -device scsi-hd,drive=hd0 \
     -drive file=$OSIMGF,if=none,aio=native,cache=none,format=qcow2,id=hd0 \
-    -device femu,devsz_mb="$devsz_mb",femu_mode=3,\
-    zns_channels="$zns_channels",\
-    zns_ways="$zns_ways",\
-    zns_dies_per_chip="$zns_dies_per_chip",\
-    zns_planes_per_die="$zns_planes_per_die",\
-    zns_block_size_pages="$zns_block_size_pages",\
-    zns_ways_per_zone="$zns_ways_per_zone",\
-    zns_channels_per_zone="$zns_channels_per_zone",\
-    zns_page_write_latency="$zns_page_write_latency",\
-    zns_page_read_latency="$zns_page_read_latency",\
-    zns_channel_transfer_latency="$zns_channel_transfer_latency",\
-    zns_block_erasure_latency="$zns_block_erasure_latency",\
-    zns_zonesize="$zns_zonesize",\
-    zns_zonecap="$zns_zonecap" \
+    -device "$femu_device" \
     -net user,hostfwd=tcp::"$port_local"-:"$port_image" \
     -net nic,model=virtio \
     -nographic \
