@@ -49,7 +49,7 @@ memory=4G         # RAM
 
 femu_device="femu,devsz_mb=${devsz_mb},femu_mode=3,zns_channels=${zns_channels},zns_ways=${zns_ways},zns_dies_per_chip=${zns_dies_per_chip},zns_planes_per_die=${zns_planes_per_die},zns_block_size_pages=${zns_block_size_pages},zns_ways_per_zone=${zns_ways_per_zone},zns_channels_per_zone=${zns_channels_per_zone},zns_page_write_latency=${zns_page_write_latency},zns_page_read_latency=${zns_page_read_latency},zns_channel_transfer_latency=${zns_channel_transfer_latency},zns_block_erasure_latency=${zns_block_erasure_latency},zns_zonesize=${zns_zonesize},zns_zonecap=${zns_zonecap}"
 
-sudo $qemu \
+$qemu \
     -name "FEMU-ZNSSD-VM" \
     -enable-kvm \
     -cpu host \

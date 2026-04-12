@@ -1,0 +1,3 @@
+[submodule "confznsplusplus"]
+	path = confznsplusplus
+	url = https://github.com/stonet-research/confznsplusplus.git
