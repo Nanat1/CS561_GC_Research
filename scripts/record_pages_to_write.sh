@@ -80,13 +80,13 @@ for gc in "${GC_MODES[@]}"; do
             --compression_type=none 2>&1")
 
         # Parse pages_to_write from FEMU log
-        STATS=$(grep -a "\[FINISH\] pages_to_write:" $FEMU_LOG \
+        STATS=$(grep -a "\[FINISH\] zone:" $FEMU_LOG \
             | awk -F'pages_to_write: ' '{sum+=$2; count++} END {if (count>0) print count, sum/count; else print "0 N/A"}')
 
         COUNT=$(echo $STATS | awk '{print $1}')
         AVG=$(echo $STATS | awk '{print $2}')
         LATENCY=$(echo "$BENCH_OUTPUT" | grep "^fillrandom" | awk '{print $3}')
-        THROUGHPUT=$(echo "$BENCH_OUTPUT" | grep "^fillrandom" | awk '{print $NF}')
+        THROUGHPUT=$(echo "$BENCH_OUTPUT" | grep "^fillrandom" | awk '{print $(NF-1)}')
         TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 
         echo "  finish_calls: $COUNT, avg pages_to_write: $AVG, latency: ${LATENCY} micros/op, throughput: ${THROUGHPUT} MB/s"
