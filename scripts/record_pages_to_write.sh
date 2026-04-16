@@ -24,7 +24,7 @@ AUX_PATH="/tmp/zenfs-aux"
 NUM_OPS=1000000
 VALUE_SIZE=1024
 KEY_SIZE=16
-THRESHOLDS=(0 10 25 50 75 90)
+THRESHOLDS=(0 10 20 30 40 50 60 70 80 90)
 GC_MODES=(false true)
 
 # ============================================================
@@ -41,12 +41,16 @@ fi
 # Setup
 # ============================================================
 mkdir -p $RESULTS_DIR
-echo "gc_mode,finish_threshold,finish_call_count,avg_pages_to_write,latency_micros_per_op,throughput_MB_per_s,timestamp" > $CSV_FILE
+echo "gc_mode,finish_threshold,total_pages_to_write,finish_call_count,latency_micros_per_op,throughput_MB_per_s,timestamp" > $CSV_FILE
 
 echo "================================================"
 echo "  pages_to_write Recording Script"
 echo "  $(date)"
 echo "================================================"
+
+# # For a single test
+# gc=false
+# thresh=10
 
 for gc in "${GC_MODES[@]}"; do
     for thresh in "${THRESHOLDS[@]}"; do
@@ -77,20 +81,24 @@ for gc in "${GC_MODES[@]}"; do
             --num=$NUM_OPS \
             --value_size=$VALUE_SIZE \
             --key_size=$KEY_SIZE \
-            --compression_type=none 2>&1")
+            --compression_type=none \
+            --write_buffer_size=25165824 \
+            --disable_auto_compactions=true 2>&1")
 
         # Parse pages_to_write from FEMU log
         STATS=$(grep -a "\[FINISH\] zone:" $FEMU_LOG \
-            | awk -F'pages_to_write: ' '{sum+=$2; count++} END {if (count>0) print count, sum/count; else print "0 N/A"}')
+            | tail -n +2 \
+            | awk -F'pages_to_write: ' '{sum+=$2; count++} END {if (count>0) print sum, count, sum/count; else print "0 0 N/A"}')
 
-        COUNT=$(echo $STATS | awk '{print $1}')
-        AVG=$(echo $STATS | awk '{print $2}')
+        SUM=$(echo $STATS | awk '{print $1}')
+        COUNT=$(echo $STATS | awk '{print $2}')
+        # AVG=$(echo $STATS | awk '{print $3}')
         LATENCY=$(echo "$BENCH_OUTPUT" | grep "^fillrandom" | awk '{print $3}')
         THROUGHPUT=$(echo "$BENCH_OUTPUT" | grep "^fillrandom" | awk '{print $(NF-1)}')
         TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 
-        echo "  finish_calls: $COUNT, avg pages_to_write: $AVG, latency: ${LATENCY} micros/op, throughput: ${THROUGHPUT} MB/s"
-        echo "$gc,$thresh,$COUNT,$AVG,$LATENCY,$THROUGHPUT,$TIMESTAMP" >> $CSV_FILE
+        echo "  pages_to_write: $SUM, finish_calls: $COUNT, latency: ${LATENCY} micros/op, throughput: ${THROUGHPUT} MB/s"
+        echo "$gc,$thresh,$SUM,$COUNT,$LATENCY,$THROUGHPUT,$TIMESTAMP" >> $CSV_FILE
     done
 done
 
