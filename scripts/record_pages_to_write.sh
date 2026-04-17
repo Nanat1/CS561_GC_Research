@@ -21,10 +21,10 @@ CSV_FILE="$RESULTS_DIR/pages_to_write.csv"
 
 ZBD="nvme0n1"
 AUX_PATH="/tmp/zenfs-aux"
-NUM_OPS=1000000
+NUM_OPS=3000000
 VALUE_SIZE=1024
 KEY_SIZE=16
-THRESHOLDS=(0 10 20 30 40 50 60 70 80 90)
+THRESHOLDS=(0 10 20 25 30 50 55 60 70 75 80 90)
 GC_MODES=(false true)
 
 # ============================================================
@@ -81,9 +81,7 @@ for gc in "${GC_MODES[@]}"; do
             --num=$NUM_OPS \
             --value_size=$VALUE_SIZE \
             --key_size=$KEY_SIZE \
-            --compression_type=none \
-            --write_buffer_size=25165824 \
-            --disable_auto_compactions=true 2>&1")
+            --compression_type=none 2>&1")
 
         # Parse pages_to_write from FEMU log
         STATS=$(grep -a "\[FINISH\] zone:" $FEMU_LOG \
