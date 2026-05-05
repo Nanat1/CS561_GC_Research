@@ -176,7 +176,7 @@ Expected output:
 
 ```
 mar : 32    Active Resources
-mor : 16    Open Resources
+mor : 32    Open Resources
 LBA Format Extension 0 : Zone Size: 0x80000 LBAs  (= 256 MiB)
 ```
 
