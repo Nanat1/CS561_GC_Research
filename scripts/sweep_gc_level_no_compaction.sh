@@ -14,7 +14,7 @@
 # ============================================================
 # Config
 # ============================================================
-SSH="ssh -o BatchMode=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -p 2222 femu@localhost"
+SSH="ssh -o BatchMode=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -p 8080 femu@localhost"
 FEMU_LOG="./log"                          # relative to confznsplusplus/build/
 RESULTS_DIR="../../results"
 CSV_FILE="$RESULTS_DIR/gc_start_level.csv"
@@ -41,7 +41,7 @@ fi
 # Setup
 # ============================================================
 mkdir -p $RESULTS_DIR
-echo "finish_threshold,gc_start_level,total_pages_to_write,finish_call_count,latency_micros_per_op,throughput_MB_per_s,timestamp" > $CSV_FILE
+echo "benchmark,num_ops,gc_mode,gc_start_level,finish_threshold,total_pages_to_write,finish_call_count,latency_micros_per_op,throughput_MB_per_s,timestamp" > $CSV_FILE
 
 echo "================================================"
 echo "  gc_start_level Recording Script"
@@ -119,7 +119,7 @@ for level in "${GC_LEVELS[@]}"; do
     TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 
     echo "  pages_to_write: $SUM, finish_calls: $COUNT, latency: ${LATENCY} micros/op, throughput: ${THROUGHPUT} MB/s"
-    echo "$FINISH_THRESHOLD,$level,$SUM,$COUNT,$LATENCY,$THROUGHPUT,$TIMESTAMP" >> $CSV_FILE
+    echo "overwrite,$NUM_OPS,true,$level,$FINISH_THRESHOLD,$SUM,$COUNT,$LATENCY,$THROUGHPUT,$TIMESTAMP" >> $CSV_FILE
 done
 
 echo ""

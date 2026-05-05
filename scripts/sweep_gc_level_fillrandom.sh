@@ -41,7 +41,7 @@ fi
 # Setup
 # ============================================================
 mkdir -p $RESULTS_DIR
-echo "workload,num_ops,gc_mode,gc_start_level,finish_threshold,total_pages_to_write,finish_call_count,latency_micros_per_op,throughput_MB_per_s,timestamp" > $CSV_FILE
+echo "benchmark,num_ops,gc_mode,gc_start_level,finish_threshold,total_pages_to_write,finish_call_count,latency_micros_per_op,throughput_MB_per_s,timestamp" > $CSV_FILE
 
 echo "================================================"
 echo "  gc_start_level Recording Script"

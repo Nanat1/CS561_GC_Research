@@ -41,7 +41,7 @@ fi
 # Setup
 # ============================================================
 mkdir -p $RESULTS_DIR
-echo "gc_mode,finish_threshold,total_pages_to_write,finish_call_count,latency_micros_per_op,throughput_MB_per_s,timestamp" > $CSV_FILE
+echo "benchmark,num_ops,gc_mode,gc_start_level,finish_threshold,total_pages_to_write,finish_call_count,latency_micros_per_op,throughput_MB_per_s,timestamp" > $CSV_FILE
 
 echo "================================================"
 echo "  pages_to_write Recording Script"
@@ -96,7 +96,7 @@ thresh=10
         TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 
         echo "  pages_to_write: $SUM, finish_calls: $COUNT, latency: ${LATENCY} micros/op, throughput: ${THROUGHPUT} MB/s"
-        echo "$gc,$thresh,$SUM,$COUNT,$LATENCY,$THROUGHPUT,$TIMESTAMP" >> $CSV_FILE
+        echo "fillrandom,$NUM_OPS,$gc,N/A,$thresh,$SUM,$COUNT,$LATENCY,$THROUGHPUT,$TIMESTAMP" >> $CSV_FILE
 #     done
 # done
 
