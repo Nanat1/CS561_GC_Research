@@ -48,12 +48,12 @@ echo "  pages_to_write Recording Script"
 echo "  $(date)"
 echo "================================================"
 
-# # For a single test
-# gc=false
-# thresh=10
+# For a single test
+gc=false
+thresh=10
 
-for gc in "${GC_MODES[@]}"; do
-    for thresh in "${THRESHOLDS[@]}"; do
+# for gc in "${GC_MODES[@]}"; do
+#     for thresh in "${THRESHOLDS[@]}"; do
         echo ""
         echo "--- GC: $gc, Threshold: $thresh% ---"
 
@@ -97,8 +97,8 @@ for gc in "${GC_MODES[@]}"; do
 
         echo "  pages_to_write: $SUM, finish_calls: $COUNT, latency: ${LATENCY} micros/op, throughput: ${THROUGHPUT} MB/s"
         echo "$gc,$thresh,$SUM,$COUNT,$LATENCY,$THROUGHPUT,$TIMESTAMP" >> $CSV_FILE
-    done
-done
+#     done
+# done
 
 echo ""
 echo "================================================"

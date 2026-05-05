@@ -1,3 +1,5 @@
 docs/
 images/
 .DS_Store
+*.log
+*.csv

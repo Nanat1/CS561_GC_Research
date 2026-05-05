@@ -1,7 +1,5 @@
 # Analyzing GC and GC-free Approaches in ZNS SSDs
 
-CS561 Spring 2026 — Boston University DiSC Lab
-
 | Name | Email |
 |---|---|
 | Hsiang En Liu | sliu10@bu.edu |
@@ -155,7 +153,7 @@ The key parameters we tuned are listed below. Full SSD geometry and latency sett
 | `ZNS_INTERNAL_PAGE_SIZE` | 4 KiB | `zns.c` |
 | `num_zones` (auto) | 64 | computed at runtime |
 | `max_active_zones` | 32 | `zns.c` |
-| `max_open_zones` | 16 | `zns.c` |
+| `max_open_zones` | 32 | `zns.c` |
 
 `num_zones` is derived automatically: `devsz_mb / zns_zonesize = 16384 MiB / 256 MiB = 64 zones`.
 The constraint `num_zones ≥ max_active_zones ≥ max_open_zones` must always hold.
