@@ -1,3 +1,6 @@
 [submodule "confznsplusplus"]
 	path = confznsplusplus
-	url = https://github.com/stonet-research/confznsplusplus.git
+	url = https://github.com/ruoxicao77i/confznsplusplus.git
+[submodule "zenfs"]
+	path = zenfs
+	url = https://github.com/ruoxicao77i/zenfs.git

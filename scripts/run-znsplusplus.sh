@@ -42,12 +42,14 @@ devsz_mb=$((1024*16))
 zns_zonesize=$((256 * 1024 * 1024))
 zns_zonecap=$((256 * 1024 * 1024))
 
+zns_vtable_mode=1
+
 port_local=8080   # < Set to your desired port
 port_image=22     # < Set to the exposed port on the image
 memory=4G         # RAM
 
 
-femu_device="femu,devsz_mb=${devsz_mb},femu_mode=3,zns_channels=${zns_channels},zns_ways=${zns_ways},zns_dies_per_chip=${zns_dies_per_chip},zns_planes_per_die=${zns_planes_per_die},zns_block_size_pages=${zns_block_size_pages},zns_ways_per_zone=${zns_ways_per_zone},zns_channels_per_zone=${zns_channels_per_zone},zns_page_write_latency=${zns_page_write_latency},zns_page_read_latency=${zns_page_read_latency},zns_channel_transfer_latency=${zns_channel_transfer_latency},zns_block_erasure_latency=${zns_block_erasure_latency},zns_zonesize=${zns_zonesize},zns_zonecap=${zns_zonecap}"
+femu_device="femu,devsz_mb=${devsz_mb},femu_mode=3,zns_channels=${zns_channels},zns_ways=${zns_ways},zns_dies_per_chip=${zns_dies_per_chip},zns_planes_per_die=${zns_planes_per_die},zns_block_size_pages=${zns_block_size_pages},zns_ways_per_zone=${zns_ways_per_zone},zns_channels_per_zone=${zns_channels_per_zone},zns_page_write_latency=${zns_page_write_latency},zns_page_read_latency=${zns_page_read_latency},zns_channel_transfer_latency=${zns_channel_transfer_latency},zns_block_erasure_latency=${zns_block_erasure_latency},zns_zonesize=${zns_zonesize},zns_zonecap=${zns_zonecap},zns_vtable_mode=${zns_vtable_mode}"
 
 $qemu \
     -name "FEMU-ZNSSD-VM" \
