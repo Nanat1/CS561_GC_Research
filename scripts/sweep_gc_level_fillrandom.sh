@@ -14,7 +14,7 @@
 # ============================================================
 # Config
 # ============================================================
-SSH="ssh -o BatchMode=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -p 2222 femu@localhost"
+SSH="ssh -o BatchMode=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -p 8080 femu@localhost"
 FEMU_LOG="./log"                          # relative to confznsplusplus/build/
 RESULTS_DIR="../../results"
 CSV_FILE="$RESULTS_DIR/gc_start_level.csv"

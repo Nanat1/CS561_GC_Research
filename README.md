@@ -25,7 +25,7 @@ project/
     build/             # run scripts go here after setup
   rocksdb/             # RocksDB with ZenFS (inside VM)
   	plugin/
-  		zenfs/
+  		zenfs/           # cloned from ruoxicao77i/zenfs fork inside VM
   images/
     u20s.qcow2         # VM image (see Section 3.2)
   scripts/             # benchmark scripts
@@ -35,7 +35,9 @@ project/
 
 ## 3. Environment Setup
 
-### 3.1 Initialize ConfZNS++ submodule
+### 3.1 Initialize submodules
+
+This project uses one submodule: ConfZNS++ (the ZNS emulator). ZenFS is cloned separately inside the VM (see Section 3.5).
 
 ```bash
 git submodule update --init --recursive
@@ -86,40 +88,36 @@ Verify:
 ```bash
 ls -lh x86_64-softmmu/qemu-system-x86_64
 ```
+### 3.4 Run VM
 
-### 3.4 Build RocksDB with ZenFS (inside VM)
+Move `scripts/run-znsplusplus.sh` to the `build` directory.
 
-SSH into the guest VM first:
-
-```bash
-ssh -p8080 femu@localhost
+```
+cd confznsplusplus/build
+cp ../../scripts/run-znsplusplus.sh .
+chmod +x run-znsplusplus.sh
+./run-znsplusplus.sh
 ```
 
-Then inside the VM:
+### 3.5 Build RocksDB with ZenFS (inside VM)
+
+Run the setup script from the host — it installs libzbd, clones RocksDB and ZenFS, and compiles everything:
 
 ```bash
-# Install libzbd (required by ZenFS)
-git clone https://github.com/westerndigitalcorporation/libzbd.git
-cd libzbd
-sh ./autogen.sh && ./configure && make
-sudo make install && sudo ldconfig
+ssh -p8080 femu@localhost 'bash -s' < scripts/setup-rocksdb-vm.sh
+```
 
-# Clone RocksDB and ZenFS
-git clone --branch v8.9.1 https://github.com/facebook/rocksdb.git
-cd rocksdb
-git clone https://github.com/westerndigitalcorporation/zenfs plugin/zenfs
+Or copy the script into the VM and run it manually:
 
-# Compile (lower -j if the terminal is killed)
-DEBUG_LEVEL=0 ROCKSDB_PLUGINS=zenfs make -j2 db_bench
-sudo make install
+```bash
+scp -P8080 scripts/setup-rocksdb-vm.sh femu@localhost:~/
+ssh -p8080 femu@localhost './setup-rocksdb-vm.sh'
+```
 
-# Compile zenfs utility
-cd plugin/zenfs/util
-make
+Verify:
 
-# Verify
-ls ~/rocksdb/db_bench
-ls ~/rocksdb/plugin/zenfs/util/zenfs
+```bash
+ssh -p8080 femu@localhost 'ls ~/rocksdb/db_bench ~/rocksdb/plugin/zenfs/util/zenfs'
 ```
 
 ## 4. ZNS Device Configuration
@@ -208,9 +206,34 @@ FEMU prints a geometry table on startup:
 
 ## 5. Running Experiments
 
-All benchmark scripts are in `scripts/` and should be run **inside the VM**.
+### 5.1 One-time setup
 
+**Inside the VM** — set the I/O scheduler (required before any benchmark):
 
+```bash
+echo mq-deadline | sudo tee /sys/block/nvme0n1/queue/scheduler
+```
 
-## 6. Collecting Results
+**On the host** — enable passwordless SSH and sudo so scripts can run unattended:
+
+```bash
+# SSH key auth (run once on host)
+ssh-copy-id -p 8080 femu@localhost
+
+# Passwordless sudo (run once inside VM)
+echo "femu ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/femu-nopasswd
+```
+
+### 5.2 Running benchmark scripts
+
+All scripts in `scripts/` are run **from the host**, and must be launched from the `confznsplusplus/build/` directory:
+
+```bash
+cd confznsplusplus/build
+cp ../../scripts/<script>.sh .
+bash <script>.sh
+```
+
+Each script SSHes into the VM automatically. See the header comments in each script for configuration options (thresholds, GC levels, etc.).
+
 
