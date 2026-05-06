@@ -137,7 +137,7 @@ After every source file modification, recompile ConfZNS++ before running experim
 
 ```c
 n->max_active_zones = 32;
-n->max_open_zones   = 16;
+n->max_open_zones   = 32;
 ```
 
 ### 4.2 Experiment configuration
