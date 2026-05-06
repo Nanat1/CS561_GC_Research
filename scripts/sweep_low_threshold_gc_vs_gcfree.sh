@@ -1,33 +1,31 @@
 #!/bin/bash
-# Record results/pages_to_write on zone FINISH across finish thresholds
+# Compare GC vs GC-free under low finish thresholds
 # CS561 Spring 2026 - Ruoxi Cao
 # Run this on the HOST (SCC), not inside the VM.
-# Usage: bash record_pages_to_write.sh
+# Usage: bash sweep_low_threshold_gc_vs_gcfree.sh
 #
 # Prerequisites (one-time setup):
 #   1. SSH key auth:     ssh-copy-id -p 8080 femu@localhost
 #   2. Sudo no-passwd:   (inside VM) echo "femu ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/femu-nopasswd
 #
 # Requires: FEMU running with [FINISH] log instrumentation in zns.c
-# Results: results/pages_to_write.csv
+# Results: results/low_threshold_gc_vs_gcfree.csv
 
 # ============================================================
 # Config
 # ============================================================
-SSH="ssh -o BatchMode=yes -p 8080 femu@localhost"
+SSH="ssh -o BatchMode=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -p 8080 femu@localhost"
 FEMU_LOG="./log"                          # relative to confznsplusplus/build/
 RESULTS_DIR="../../results"
-CSV_FILE="$RESULTS_DIR/pages_to_write.csv"
+CSV_FILE="$RESULTS_DIR/low_threshold_gc_vs_gcfree.csv"
 
 ZBD="nvme0n1"
 AUX_PATH="/tmp/zenfs-aux"
 NUM_OPS=3000000
 VALUE_SIZE=1024
 KEY_SIZE=16
-THRESHOLDS=(0 10 20 30 40 50 60 70 80 90)
-GC_MODES=(false true)
-GC_START_LEVEL=20 # Default
-BENCHMARK=fillrandom
+LOW_THRESHOLDS=(0 5 10 15 20 25 30)
+GC_START_LEVEL=20                         # fixed GC trigger level for GC mode
 
 # ============================================================
 # Check SSH connectivity
@@ -46,22 +44,25 @@ mkdir -p $RESULTS_DIR
 echo "benchmark,num_ops,gc_mode,gc_start_level,finish_threshold,total_pages_to_write,finish_call_count,latency_micros_per_op,throughput_MB_per_s,timestamp" > $CSV_FILE
 
 echo "================================================"
-echo "  pages_to_write Recording Script"
+echo "  GC vs GC-free: Low Finish Threshold Sweep"
+echo "  Thresholds: ${LOW_THRESHOLDS[*]}"
+echo "  GC start level (GC mode only): $GC_START_LEVEL%"
 echo "  $(date)"
 echo "================================================"
 
-for gc in "${GC_MODES[@]}"; do
-    for thresh in "${THRESHOLDS[@]}"; do
+for thresh in "${LOW_THRESHOLDS[@]}"; do
+    for gc in false true; do
+        GC_LEVEL_VAL=$( [ "$gc" = "true" ] && echo "$GC_START_LEVEL" || echo "N/A" )
         LOG="fillrandom_gc${gc}_thresh${thresh}_${NUM_OPS}.log"
 
         echo ""
-        echo "--- GC: $gc, Threshold: $thresh% ---"
+        echo "--- Threshold: $thresh%, GC: $gc ---"
 
-        # Clear previous FINISH log entries
+        # Clear FEMU log
         echo "  Clearing FEMU log..."
         > $FEMU_LOG
 
-        # Reset zones and format ZenFS inside VM
+        # Reset zones and format ZenFS
         echo "  Resetting zones and formatting ZenFS..."
         $SSH "sudo rm -rf $AUX_PATH"
         $SSH "sudo nvme zns reset-zone -a /dev/$ZBD && \
@@ -74,7 +75,7 @@ for gc in "${GC_MODES[@]}"; do
                 --gc_start_level=$GC_START_LEVEL \
                 --force 2>/dev/null"
 
-        # Run fillrandom inside VM
+        # Run fillrandom
         echo "  Running fillrandom..."
         $SSH "cd ~/rocksdb && sudo ./db_bench \
             --fs_uri=zenfs://dev:$ZBD \
@@ -90,17 +91,16 @@ for gc in "${GC_MODES[@]}"; do
         # Parse pages_to_write from FEMU log
         STATS=$(grep -a "\[FINISH\] zone:" $FEMU_LOG \
             | tail -n +2 \
-            | awk -F'pages_to_write: ' '{sum+=$2; count++} END {if (count>0) print sum, count, sum/count; else print "0 0 N/A"}')
+            | awk -F'pages_to_write: ' '{sum+=$2; count++} END {if (count>0) print sum, count; else print "0 0"}')
 
         SUM=$(echo $STATS | awk '{print $1}')
         COUNT=$(echo $STATS | awk '{print $2}')
-        # AVG=$(echo $STATS | awk '{print $3}')
         LATENCY=$(echo "$BENCH_OUTPUT" | grep "^fillrandom" | awk '{print $3}')
         THROUGHPUT=$(echo "$BENCH_OUTPUT" | grep "^fillrandom" | awk '{print $(NF-1)}')
         TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 
         echo "  pages_to_write: $SUM, finish_calls: $COUNT, latency: ${LATENCY} micros/op, throughput: ${THROUGHPUT} MB/s"
-        echo "fillrandom,$NUM_OPS,$gc,N/A,$thresh,$SUM,$COUNT,$LATENCY,$THROUGHPUT,$TIMESTAMP" >> $CSV_FILE
+        echo "fillrandom,$NUM_OPS,$gc,$GC_LEVEL_VAL,$thresh,$SUM,$COUNT,$LATENCY,$THROUGHPUT,$TIMESTAMP" >> $CSV_FILE
     done
 done
 
